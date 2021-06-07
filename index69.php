@@ -23,7 +23,7 @@ class User {
     ); 
 
     public function getUserInfoById($inputId){
-        $this->user_list;
+        // $this->user_list;
         return $this->user_list[$inputId];
     }
 }
