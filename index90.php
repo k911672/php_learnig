@@ -30,6 +30,14 @@
 // ID, 商品名, JANコード
 // 5, 終了
 
+// 修正点１：
+// ① UserクラスのインスタンスをGoodsクラスのコンストラクタに渡されておりますがこちらは不要　OK
+// ② ファイル変数の中身をコンストラクタにセット　OK
+// ③ プロパティの宣言を上部に　OK
+// ④ プロパティの宣言位置　OK？（質問）
+// ⑤ var_dumpをechoに変更　OK
+// ⑥ import機能の実装
+
 require_once ("validation90/ContinueValidation.php");
 require_once ("validation90/DeleteValidation.php");
 require_once ("validation90/MenuValidation.php");
@@ -38,7 +46,7 @@ require_once ("validation90/RegisterValidation.php");
 require_once ("validation90/UserIdValidation.php");
 
 class User {
-    public $user_list = array (
+    public static $user_list = array (
         1 => array(
             "id" => "1",
             "password" => "1234",
@@ -48,29 +56,32 @@ class User {
             "id" => "2",
             "password" => "3456",
             "name" => "suzuki",
-        )
-    ); 
-
-    public function getUserInfoById($inputId){
-        return $this->user_list[$inputId];
-    }
+            )
+        ); 
 }
-
+    
 class Goods {
     const MENU_REGISTER = 1;
     const MENU_DELETE = 2;
     const MENU_SHOW = 3;
-    const MENU_FINISH = 4;
-
+    const MENU_IMPORT = 4;
+    const MENU_FINISH = 5;
+    
+    public $user;
+    public $titleFile;
+    public $contents_file;
+    public $registerId;
+    
     const JUDGE_CONTINUE = [
         "1" => true,
         "2" => false
     ];
 
-       //ログイン機能
-    public $user;
-    public function __construct($users) {
-        $this->login($users);
+    //ログイン機能
+    public function __construct() {
+        $this->titleFile = "./csv/dev/goods/".date("Ymd")."title.csv";
+        $this->contents_file = "./csv/dev/goods/".date("Ymd")."goods.csv";
+        $this->login(User::$user_list);
     }
 
     public function login($users) {
@@ -84,7 +95,8 @@ class Goods {
             $this->showErrorMessages($errors);
             return $this->login($users);
         }
-        $userInfo = $users->getUserInfoById($inputId);
+
+        $userInfo = $users[$inputId];
         $this->user = $userInfo["name"];
         $userPassword = $userInfo["password"];
         echo "パスワードを入力お願いいたします。\n";
@@ -92,7 +104,7 @@ class Goods {
         echo $this->user."様、いらっしゃいませ。\n";
     }
 
-    //パスワード入力
+        //パスワード入力
     public function inputPassword($userPassword){
         $inputPassword = trim(fgets(STDIN));
 
@@ -110,37 +122,75 @@ class Goods {
         }
     }
 
+    public function main(){
+        $this->makeFile();
+        $this->makeTitle();
+        switch($this->selectMenu()){
+            case self::MENU_REGISTER:
+                $this->registerContents();
+                break;
+            case self::MENU_DELETE:
+                $this->deleteContents();
+                break;
+            case self::MENU_SHOW:
+                $this->showContents();
+                break;
+            case self::MENU_IMPORT:
+                $this->importCSV();
+                break;
+            case self::MENU_FINISH:
+                echo "ご利用ありがとうございました。\n";
+                return;
+            default:
+                echo "入力した値が間違っております。\n";
+                return $this->main();
+        }
+        if($this->isContinue()){
+            return $this->main();
+        };
+    }
 
     //ファイルの作成
-    public $file;
     public function makeFile(){
-        $dir = dirname($this->file);
+        $dir = dirname($this->titleFile);
         
-        if(!file_exists($this->file)){
+        if(!file_exists($this->titleFile)){
             mkdir($dir, 0700, true);
-            touch($this->file);
+            touch($this->titleFile);
         }
     }
-    
+
     //項目名の追加
     public function makeTitle(){
-        $fp_title = fopen($this->file, "w");
+        $fp_title = fopen($this->titleFile, "w");
         $goodsTitle = array("id", "商品名", "JANコード");
         $titleLine = implode(',' , $goodsTitle);
         fwrite($fp_title, $titleLine."\n");
         fclose($fp_title);
     }
     
-    // //商品マスター登録
-    public $contents_file;
+    //メニューの選択
+    public function selectMenu(){
+        $validation = new MenuValidation;
+
+        echo  "ご利用のメニューをお選びください。 1:登録商品の追加, 2:登録商品の削除, 3:登録商品の照会, 4:importディレクトリ内のファイルをインポート, 5:終了\n";
+        $inputMenu = trim(fgets(STDIN));
+        if (!$validation->check($inputMenu)){
+            $errors = $validation->getErrorMessages();
+            $this->showErrorMessages($errors);
+            return $this->selectMenu();
+        }
+        return $inputMenu;
+    }
     
+    //商品マスター登録
     public function registerContents(){
         $validation = new RegisterValidation;
 
         $fp_contents = fopen($this->contents_file, "w");
         $id = 1;
 
-        $fileTitle = file_get_contents($this->file);
+        $fileTitle = file_get_contents($this->titleFile);
         fwrite($fp_contents, $fileTitle);
         
         echo "登録する商品数を入力下さい\n";
@@ -164,14 +214,13 @@ class Goods {
             $id++;
         }
         
-        if(file_exists($this->file)){
-            unlink($this->file);
+        if(file_exists($this->titleFile)){
+            unlink($this->titleFile);
         }
         fclose($fp_contents);
     }
     
-    // // 商品削除
-    public $registerId;
+    //商品削除
     public function deleteContents(){
         $validation = new DeleteValidation;
         $fp_read = fopen($this->contents_file, "r");
@@ -196,66 +245,49 @@ class Goods {
     public function showContents(){
         $fp_read = fopen($this->contents_file, "r");
         while ($line = fgets($fp_read)) {
-            var_dump($line);
+            // var_dump($line);
+            echo $line;
         }
         fclose($fp_read);
     }
 
-    //メニューの選択
-    public function selectMenu(){
-        $validation = new MenuValidation;
-
-        echo  "ご利用のメニューをお選びください。 1:登録商品の追加, 2:登録商品の削除, 3:登録商品の照会, 4:終了\n";
-        $inputMenu = trim(fgets(STDIN));
-        if (!$validation->check($inputMenu)){
-            $errors = $validation->getErrorMessages();
-            $this->showErrorMessages($errors);
-            return $this->selectMenu();
+    //import機能の実装
+    public function importCSV(){
+        $path =  "./csv/dev/goods/import/";
+        $fileDate = array();
+        $files = scandir($path);
+    
+        foreach( $files as $importFile ) {
+            $filePath = $path.$importFile ;
+            $pathInfo = pathinfo($filePath, PATHINFO_EXTENSION);
+            if($pathInfo === 'csv'){
+                $fileDate[] = $filePath;
+            }
         }
-        return $inputMenu;
+    
+        foreach ($fileDate as $importCsvFile) {
+            $fp_write = fopen($this->contents_file, "a");
+            $fileContents = file_get_contents($importCsvFile);
+            fwrite($fp_write, $fileContents);
+        }
     }
 
-        //継続か否か
-        public function isContinue(){
-            $validation = new ContinueValidation;
-            echo "続いて操作を行いますか? 1:YES, 2:N0, \n";
-            $continue = self::JUDGE_CONTINUE[trim(fgets(STDIN))];
+    //継続か否か
+    public function isContinue(){
+        $validation = new ContinueValidation;
+        echo "続いて操作を行いますか? 1:YES, 2:N0, \n";
+        $continue = self::JUDGE_CONTINUE[trim(fgets(STDIN))];
 
-            if(!$validation->check($continue)){
-                $errors = $validation->getErrorMessages();
-                $this->showErrorMessages($errors);
-                return $this->isContinue();
-            }
-            if(!$continue){
-                echo "ご利用ありがとうございました。\n";
-                return false;
-            }
-            return true;
+        if(!$validation->check($continue)){
+            $errors = $validation->getErrorMessages();
+            $this->showErrorMessages($errors);
+            return $this->isContinue();
         }
-
-    public function main(){
-        $this->makeFile();
-        $this->makeTitle();
-        switch($this->selectMenu()){
-            case self::MENU_REGISTER:
-                $this->registerContents();
-                break;
-            case self::MENU_DELETE:
-                $this->deleteContents();
-                break;
-            case self::MENU_SHOW:
-                $this->showContents();
-                break;
-            case self::MENU_FINISH:
-                echo "ご利用ありがとうございました。\n";
-                return;
-            default:
-                echo "入力した値が間違っております。\n";
-                return $this->main();
+        if(!$continue){
+            echo "ご利用ありがとうございました。\n";
+            return false;
         }
-        if($this->isContinue()){
-            return $this->main();
-        };
+        return true;
     }
 
     public function showErrorMessages($errors){
@@ -265,13 +297,7 @@ class Goods {
     }
 }
 
-$users = new User;
-$goods = new Goods($users);
-$goods->file = "./csv/dev/goods/".date("Ymd").".csv";
-$goods->contents_file = "./csv/dev/goods/".date("Ymd")."goods.csv";
+$goods = new Goods();
 $goods->main();
-
-
-//各バリデーションの追加
 
 ?>

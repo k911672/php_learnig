@@ -7,7 +7,8 @@
                 $this->errors[] = "数値を入力ください"; 
                 return false;
             }
-            if(!array_key_exists($inputId, $users->user_list)){
+
+            if(!array_key_exists($inputId, $users)){
                 $this->errors[] = "一致するIDがございません";
                 return false;
             }
