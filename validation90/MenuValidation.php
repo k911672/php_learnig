@@ -8,7 +8,7 @@
                 $this->errors[] = "数値を入力ください\n";
                 return false;
             }
-            if ($inputMenu > 4 || $inputMenu < 1){
+            if ($inputMenu > 5 || $inputMenu < 1){
                 $this->errors[] = "選択肢からお選びください。\n";
                 return false;
             }
