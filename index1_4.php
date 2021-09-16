@@ -22,21 +22,6 @@ var_dump($test);
 // 整数型の２つの変数を宣言してください。
 // 2つの変数を用いて、　足す、引く、かける、割る、割った余りを出力してください。
 
-// $a = 124;
-// $b = 3;
-
-// // $resolve = $a + $b;
-// // echo $resolve;
-// // $resolve = $a - $b;
-// // echo $resolve;
-// // $resolve = $a * $b;
-// // echo $resolve;
-// // $resolve = $a / $b;
-// // echo $resolve;
-// // $resolve = $a % $b;
-// echo $resolve;
-
-// ↓訂正箇所：変数名の変更と改行処理の追加
 $odd = 13;
 $even = 2;
 
@@ -55,16 +40,6 @@ echo $resolve."\n";
 // 初期値がfalseである論理型の変数を宣言してください。
 // 問題2で宣言した２つの変数を足した結果が偶数であれば、論理型の変数にtrueを代入してください。
 
-// $boolean = false;
-// var_dump($boolean);
-
-// if(($a + $b)%2 === 0){
-//   $boolean = true;
-//   var_dump($boolean);
-// };
-
-// ↓訂正個所：変数名の変更、演算子のスペース追加
-
 $bool = false;
 var_dump($bool);
 
@@ -78,13 +53,6 @@ if(($odd + $even) % 2 === 0){
 // ・偶数なら..... 「偶数です」
 // ・奇数なら.....「奇数です」
 
-// if(($a + $b)%2 === 0){
-//   echo '偶数です';
-// } else {
-//   echo '奇数です';
-// };
-
-//↓訂正箇所：問３の$boolの活用、改行。
 if($bool){
   echo '偶数です'."\n";
 } else {
