@@ -43,7 +43,7 @@ $even = 2;
 $resolve = $odd + $even;
 echo $resolve."\n";
 $resolve = $odd - $even;
-echo $resolve."\n";
+echo $resolve."\n"
 $resolve = $odd * $even;
 echo $resolve."\n";
 $resolve = $odd / $even;
